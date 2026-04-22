@@ -1,167 +1,216 @@
 import java.util.*;
 
+class StackCustom {
+    private List<String> items = new ArrayList<>();
+
+    public void push(String item) {
+        items.add(item);
+    }
+
+    public String pop() {
+        if (!isEmpty()) {
+            return items.remove(items.size() - 1);
+        }
+        return null;
+    }
+
+    public String peek() {
+        if (!isEmpty()) {
+            return items.get(items.size() - 1);
+        }
+        return null;
+    }
+
+    public boolean isEmpty() {
+        return items.isEmpty();
+    }
+
+    public String toString() {
+        return items.toString();
+    }
+}
+
 public class EvaluasiEkspresi {
-    
-    // Menentukan prioritas operator
-    static int precedence(char op) {
-        switch (op) {
-            case '+':
-            case '-':
-                return 1;
-            case '*':
-            case '/':
-                return 2;
-            case '^':
-                return 3;
-            default:
-                return -1;
-        }
+
+    // Prioritas operator
+    public static int precedence(String op) {
+        if (op.equals("+") || op.equals("-")) return 1;
+        if (op.equals("*") || op.equals("/")) return 2;
+        if (op.equals("^")) return 3;
+        return 0;
     }
-    
-    // Mengecek apakah karakter adalah operator
-    static boolean isOperator(char ch) {
-        return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^';
+
+    public static boolean isOperator(String ch) {
+        return "+-*/^".contains(ch);
     }
-    
-    // Konversi infix ke postfix dengan step-by-step
-    static String infixToPostfix(String infix) {
-        StringBuilder postfix = new StringBuilder();
-        Stack<Character> stack = new Stack<>();
-        
-        System.out.println("\n==========================================");
+
+    // 🔄 INFIX → POSTFIX
+    public static List<String> infixToPostfix(String infix) {
+        List<String> postfix = new ArrayList<>();
+        StackCustom stack = new StackCustom();
+
+        System.out.println("\n" + "=".repeat(50));
         System.out.println("STEP-BY-STEP KONVERSI INFIX KE POSTFIX");
-        System.out.println("==========================================");
+        System.out.println("=".repeat(50));
         System.out.printf("%-10s %-20s %-20s %s\n", "Input", "Stack", "Postfix", "Keterangan");
-        System.out.println("------------------------------------------------------------");
-        
-        for (int i = 0; i < infix.length(); i++) {
+        System.out.println("-".repeat(70));
+
+        int i = 0;
+        while (i < infix.length()) {
             char ch = infix.charAt(i);
-            String keterangan = "";
-            
+
+            // 🔢 Ambil angka lebih dari 1 digit
             if (Character.isDigit(ch)) {
-                postfix.append(ch);
-                keterangan = "Operand → langsung ke postfix";
-                System.out.printf("%-10c %-20s %-20s %s\n", ch, stack.toString(), postfix.toString(), keterangan);
+                String num = "" + ch;
+                while (i + 1 < infix.length() && Character.isDigit(infix.charAt(i + 1))) {
+                    i++;
+                    num += infix.charAt(i);
+                }
+
+                postfix.add(num);
+                System.out.printf("%-10s %-20s %-20s %s\n",
+                        num, stack.toString(), String.join(" ", postfix),
+                        "Operand → langsung ke postfix");
             }
+
             else if (ch == '(') {
-                stack.push(ch);
-                keterangan = "Kurung buka → push ke stack";
-                System.out.printf("%-10c %-20s %-20s %s\n", ch, stack.toString(), postfix.toString(), keterangan);
+                stack.push("(");
+                System.out.printf("%-10s %-20s %-20s %s\n",
+                        ch, stack.toString(), String.join(" ", postfix),
+                        "Kurung buka → push ke stack");
             }
+
             else if (ch == ')') {
-                keterangan = "Kurung tutup → pop sampai '('";
-                System.out.printf("%-10c %-20s %-20s %s\n", ch, stack.toString(), postfix.toString(), keterangan);
-                
-                while (!stack.isEmpty() && stack.peek() != '(') {
-                    postfix.append(stack.pop());
-                    System.out.printf("%-10s %-20s %-20s %s\n", "", stack.toString(), postfix.toString(), "Pop operator ke postfix");
+                System.out.printf("%-10s %-20s %-20s %s\n",
+                        ch, stack.toString(), String.join(" ", postfix),
+                        "Kurung tutup → pop sampai '('");
+
+                while (!stack.isEmpty() && !stack.peek().equals("(")) {
+                    postfix.add(stack.pop());
+                    System.out.printf("%-10s %-20s %-20s %s\n",
+                            "", stack.toString(), String.join(" ", postfix),
+                            "Pop operator ke postfix");
                 }
-                if (!stack.isEmpty() && stack.peek() == '(') {
-                    stack.pop(); // buang '('
-                    System.out.printf("%-10s %-20s %-20s %s\n", "", stack.toString(), postfix.toString(), "Pop '('");
-                }
+
+                stack.pop(); // buang '('
+                System.out.printf("%-10s %-20s %-20s %s\n",
+                        "", stack.toString(), String.join(" ", postfix),
+                        "Pop '('");
             }
-            else if (isOperator(ch)) {
-                keterangan = "Operator → push setelah pop prioritas lebih tinggi/sama";
-                System.out.printf("%-10c %-20s %-20s %s\n", ch, stack.toString(), postfix.toString(), keterangan);
-                
-                while (!stack.isEmpty() && precedence(stack.peek()) >= precedence(ch)) {
-                    postfix.append(stack.pop());
-                    System.out.printf("%-10s %-20s %-20s %s\n", "", stack.toString(), postfix.toString(), "Pop operator prioritas lebih tinggi/sama");
+
+            else if (isOperator(String.valueOf(ch))) {
+                String op = String.valueOf(ch);
+
+                System.out.printf("%-10s %-20s %-20s %s\n",
+                        op, stack.toString(), String.join(" ", postfix),
+                        "Operator diproses");
+
+                while (!stack.isEmpty() &&
+                        !stack.peek().equals("(") &&
+                        precedence(stack.peek()) >= precedence(op)) {
+
+                    postfix.add(stack.pop());
+                    System.out.printf("%-10s %-20s %-20s %s\n",
+                            "", stack.toString(), String.join(" ", postfix),
+                            "Pop prioritas lebih tinggi/sama");
                 }
-                stack.push(ch);
-                System.out.printf("%-10s %-20s %-20s %s\n", "", stack.toString(), postfix.toString(), "Push operator baru");
+
+                stack.push(op);
+                System.out.printf("%-10s %-20s %-20s %s\n",
+                        "", stack.toString(), String.join(" ", postfix),
+                        "Push operator");
             }
+
+            i++;
         }
-        
-        // Pop semua sisa operator di stack
+
+        // Pop sisa operator
         while (!stack.isEmpty()) {
-            postfix.append(stack.pop());
-            System.out.printf("%-10s %-20s %-20s %s\n", "", stack.toString(), postfix.toString(), "Pop sisa operator di stack");
+            postfix.add(stack.pop());
+            System.out.printf("%-10s %-20s %-20s %s\n",
+                    "", stack.toString(), String.join(" ", postfix),
+                    "Pop sisa operator");
         }
-        
-        System.out.println("==========================================\n");
-        return postfix.toString();
+
+        System.out.println("=".repeat(50) + "\n");
+        return postfix;
     }
-    
-    // Evaluasi postfix dengan step-by-step
-    static int evaluatePostfix(String postfix) {
+
+    // 🧮 EVALUASI POSTFIX
+    public static int evaluatePostfix(List<String> postfix) {
         Stack<Integer> stack = new Stack<>();
-        
-        System.out.println("\n==========================================");
+
+        System.out.println("\n" + "=".repeat(50));
         System.out.println("STEP-BY-STEP EVALUASI POSTFIX");
-        System.out.println("==========================================");
+        System.out.println("=".repeat(50));
         System.out.printf("%-10s %-30s %s\n", "Input", "Stack", "Operasi");
-        System.out.println("------------------------------------------------------------");
-        
-        for (int i = 0; i < postfix.length(); i++) {
-            char ch = postfix.charAt(i);
-            
-            if (Character.isDigit(ch)) {
-                stack.push(ch - '0');
-                System.out.printf("%-10c %-30s %s\n", ch, stack.toString(), "Push operand " + ch);
+        System.out.println("-".repeat(60));
+
+        for (String token : postfix) {
+
+            if (token.matches("\\d+")) {
+                stack.push(Integer.parseInt(token));
+                System.out.printf("%-10s %-30s %s\n",
+                        token, stack.toString(), "Push " + token);
             } else {
                 int b = stack.pop();
                 int a = stack.pop();
                 int result = 0;
                 String operasi = "";
-                
-                switch (ch) {
-                    case '+': 
-                        result = a + b; 
+
+                switch (token) {
+                    case "+":
+                        result = a + b;
                         operasi = a + " + " + b + " = " + result;
                         break;
-                    case '-': 
-                        result = a - b; 
+                    case "-":
+                        result = a - b;
                         operasi = a + " - " + b + " = " + result;
                         break;
-                    case '*': 
-                        result = a * b; 
+                    case "*":
+                        result = a * b;
                         operasi = a + " * " + b + " = " + result;
                         break;
-                    case '/': 
-                        result = a / b; 
+                    case "/":
+                        result = a / b;
                         operasi = a + " / " + b + " = " + result;
                         break;
-                    case '^': 
-                        result = (int) Math.pow(a, b); 
+                    case "^":
+                        result = (int) Math.pow(a, b);
                         operasi = a + " ^ " + b + " = " + result;
                         break;
                 }
-                
+
                 stack.push(result);
-                System.out.printf("%-10c %-30s %s\n", ch, stack.toString(), operasi);
+                System.out.printf("%-10s %-30s %s\n",
+                        token, stack.toString(), operasi);
             }
         }
-        
-        System.out.println("==========================================\n");
+
+        System.out.println("=".repeat(50) + "\n");
         return stack.pop();
     }
-    
+
+    // 🚀 MAIN
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        
-        System.out.println("==========================================");
+
+        System.out.println("=".repeat(50));
         System.out.println("PROGRAM EVALUASI EKSPRESI ARITMATIKA");
-        System.out.println("==========================================");
+        System.out.println("=".repeat(50));
+
         System.out.print("Masukkan ekspresi infix: ");
-        String infix = sc.nextLine();
-        
-        // Hapus spasi jika ada
-        infix = infix.replaceAll("\\s+", "");
-        
+        String infix = sc.nextLine().replace(" ", "");
+
         System.out.println("\nEkspresi Infix: " + infix);
-        
-        // Konversi ke postfix
-        String postfix = infixToPostfix(infix);
-        System.out.println("POSTFIX EXPRESSION: " + postfix);
-        
-        // Evaluasi postfix
+
+        List<String> postfix = infixToPostfix(infix);
+        System.out.println("POSTFIX EXPRESSION: " + String.join(" ", postfix));
+
         int hasil = evaluatePostfix(postfix);
-        System.out.println("==========================================");
+
+        System.out.println("=".repeat(50));
         System.out.println("HASIL AKHIR: " + hasil);
-        System.out.println("==========================================");
-        
-        sc.close();
+        System.out.println("=".repeat(50));
     }
 }
